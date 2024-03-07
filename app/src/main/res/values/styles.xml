@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+	Base application theme, dependent on API level. This theme is replaced
+	by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
+    -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+		<item name="colorAccent">@color/main</item>
+		<item name="preferenceTheme">@style/MaterialPreference</item>
+		<item name="android:fitsSystemWindows">true</item>
+		<item name="android:progressBarStyleHorizontal">@style/InitProgressBar</item>
+		<item name="android:fastScrollThumbDrawable">@drawable/fastscroll_thumb_material</item>
+		<item name="android:fastScrollTrackDrawable">@drawable/fastscroll_track_material</item>
+    </style>
+	<style name="AppTheme.Dark" parent="Theme.AppCompat">
+		<!--item name="colorAccent">@color/main</item-->
+		<item name="android:fitsSystemWindows">true</item>
+		<item name="android:progressBarStyleHorizontal">@style/InitProgressBar</item>
+		<item name="preferenceTheme">@style/MaterialPreference</item>
+		<item name="android:fastScrollThumbDrawable">@drawable/fastscroll_thumb_material</item>
+		<item name="android:fastScrollTrackDrawable">@drawable/fastscroll_track_material</item>
+	</style>
+	<style name="AppTheme.NoTitle" parent="AppTheme">
+		<item name="windowActionBar">false</item>
+		<item name="windowNoTitle">true</item>
+	</style>
+	<style name="AppTheme.Dark.NoTitle" parent="AppTheme.Dark">
+		<item name="windowActionBar">false</item>
+		<item name="windowNoTitle">true</item>
+	</style>
+	<style name="MaterialPreference" parent="@style/PreferenceThemeOverlay.v14.Material">
+	</style>
+	<style name="TitleText">
+		<item name="android:textSize">16dp</item>
+		<item name="android:textStyle">bold</item>
+		<item name="android:typeface">sans</item>
+	</style>
+	<style name="culi">
+		<item name="android:layout_gravity">right|center_vertical</item>
+		<item name="android:gravity">right|center_vertical</item>
+	</style>
+	<style name="InitProgressBar" parent="@android:style/Widget.Holo.ProgressBar.Horizontal">
+		<!-- 最大-->
+        <item name="android:maxHeight">20dp</item>
+        <item name="android:minHeight">3dp</item>
+        <!--item name="android:indeterminateOnly">false</item-->
+        <!--item name="android:indeterminateDrawable">@android:drawable/progress_indeterminate_horizontal</item-->
+        <item name="android:progressDrawable">@drawable/progress_material</item>
+    </style>
+	<style name="cusp">
+		<item name="android:layout_gravity">center_vertical</item>
+		<item name="android:gravity">right</item>
+		<item name="android:singleLine">true</item>
+	</style>
+	<style name="OneLineEdit">
+		<item name="android:maxLines">1</item>
+		<item name="android:singleLine">true</item>
+	</style>
+</resources>

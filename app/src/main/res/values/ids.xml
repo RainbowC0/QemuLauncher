@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<item name="conflist" type="id"></item>
+	<item name="conflinear" type="id"></item>
+	<item name="disk_delete" type="id"></item>
+	<item name="disk_format" type="id"></item>
+	<item name="size_unit" type="id"></item>
+</resources>

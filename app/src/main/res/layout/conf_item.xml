@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	android:layout_width="fill_parent"
+	android:layout_height="wrap_content"
+	android:orientation="horizontal"
+	android:gravity="center_vertical"
+	android:minHeight="60dp"
+	android:clickable="true"
+	android:background="?android:attr/selectableItemBackground"
+	android:padding="4dp">
+
+	<LinearLayout
+		android:layout_height="wrap_content"
+		android:layout_width="wrap_content"
+		android:orientation="vertical">
+
+		<TextView
+			android:layout_height="wrap_content"
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:layout_width="wrap_content"
+			android:textColor="?android:attr/textColorPrimary"
+			android:id="@+id/confName"/>
+
+		<TextView
+			android:layout_height="wrap_content"
+			android:layout_width="wrap_content"
+			android:textSize="11dp"
+			android:id="@+id/confDate"
+			android:gravity="center_vertical"/>
+
+	</LinearLayout>
+
+	<android.support.v4.widget.Space
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:visibility="invisible"
+		android:layout_weight="1.0"/>
+
+	<ImageView
+		android:layout_height="wrap_content"
+		android:clickable="false"
+		style="?attr/actionButtonStyle"
+		android:layout_width="wrap_content"
+		app:srcCompat="@drawable/ic_play_arrow_black_24dp"
+		android:id="@+id/confGo"/>
+
+	<ImageView
+		android:layout_height="wrap_content"
+		style="?attr/actionButtonStyle"
+		android:clickable="false"
+		android:layout_width="wrap_content"
+		app:srcCompat="@drawable/ic_create_black_24dp"
+		android:id="@+id/confEdit"/>
+
+</LinearLayout>
+

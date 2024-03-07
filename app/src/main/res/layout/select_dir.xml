@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:orientation="vertical"
+	android:paddingLeft="?attr/dialogPreferredPadding"
+	android:paddingRight="?attr/dialogPreferredPadding">
+
+	<EditText
+		android:layout_height="wrap_content"
+		android:text="/"
+		android:layout_width="match_parent"
+		style="?android:attr/textViewStyle"
+		android:id="@+id/preference_path"
+		android:background="@null"
+		android:imeOptions="actionGo"
+		android:maxLines="1"
+		android:editable="true"
+		android:singleLine="true"/>
+
+	<ListView
+		android:layout_height="match_parent"
+		android:layout_width="match_parent"
+		android:id="@android:id/list_container"
+		android:scrollbars="none"
+		android:overScrollMode="never"
+		android:fastScrollEnabled="true"/>
+
+</LinearLayout>
+

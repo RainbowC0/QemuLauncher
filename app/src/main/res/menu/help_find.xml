@@ -1,0 +1,10 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+		android:icon="@drawable/ic_expand_less_black_24dp"
+        android:id="@+id/help_last"
+        android:title="@string/find_last"/>
+    <item
+		android:icon="@drawable/ic_expand_more_black_24dp"
+		android:id="@+id/help_next"
+		android:title="@string/find_next"/>
+</menu>

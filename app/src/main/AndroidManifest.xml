@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/android"
+	xmlns:tools="http://schemas.android.com/tools"
+    package="cn.qemu.launcher"
+    android:versionCode="5"
+    android:versionName="1.1.1">
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+	<uses-permission android:name="android.permission.RESTART_PACKAGES"/>
+	<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+	<uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+	<uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" tools:ignore="ProtectedPermissions"/>
+
+    <application
+        android:icon="@mipmap/ic_launcher"
+		android:theme="@style/AppTheme"
+        android:label="@string/app_name"
+		android:name=".application.MainApplication"
+		android:requestLegacyExternalStorage="true">
+        <activity
+			android:name=".activity.MainActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize">
+			<intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+			android:label="@string/choose_file"
+            android:name=".activity.FileActivity"/>
+		<activity
+			android:name=".activity.EditActivity"
+			android:configChanges="orientation|keyboardHidden|screenSize"/>
+		<activity
+			android:label="@string/network_card"
+			android:name=".activity.NetCardActivity"/>
+    </application>
+
+</manifest>
+

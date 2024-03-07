@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<declare-styleable name="DiskPreference">
+		<attr name="fdf">
+			<enum name="file" value="0"/>
+            <enum name="dir" value="1"/>
+            <enum name="fad" value="2"/>
+		</attr>
+	</declare-styleable>
+</resources>

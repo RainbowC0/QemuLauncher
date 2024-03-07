@@ -1,0 +1,8 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/help_search"
+		android:icon="@drawable/abc_ic_search_api_material"
+        android:title="@string/find"
+		app:showAsAction="always"/>
+</menu>

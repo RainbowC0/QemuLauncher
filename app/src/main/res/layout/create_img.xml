@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schema.android.com/apk/res-auto"
+	android:layout_height="match_parent"
+	android:layout_width="match_parent"
+	android:orientation="vertical"
+	android:paddingLeft="?attr/dialogPreferredPadding"
+	android:paddingRight="?attr/dialogPreferredPadding">
+
+	<LinearLayout
+		android:layout_marginTop="16dp"
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		android:orientation="horizontal">
+
+		<android.support.design.widget.TextInputLayout
+			android:layout_height="wrap_content"
+			android:layout_width="wrap_content"
+			android:layout_weight="1">
+
+			<EditText
+				android:layout_height="wrap_content"
+				android:layout_width="match_parent"
+				android:text="xp"
+				android:id="@+id/nam"
+				style="@style/OneLineEdit"
+				android:hint="@string/imgname"/>
+
+		</android.support.design.widget.TextInputLayout>
+
+		<Spinner
+			style="@style/Widget.AppCompat.Spinner.Underlined"
+			android:entries="@array/disk_format"
+			android:layout_height="48dp"
+			android:layout_gravity="bottom"
+			android:id="@id/disk_format"
+			android:layout_width="wrap_content"/>
+
+	</LinearLayout>
+
+	<include layout="@layout/inc_open"/>
+
+	<LinearLayout
+		android:layout_marginTop="16dp"
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		android:orientation="horizontal">
+
+		<android.support.design.widget.TextInputLayout
+			android:layout_height="wrap_content"
+			android:layout_width="wrap_content"
+			android:layout_weight="1">
+
+			<EditText
+				android:layout_height="wrap_content"
+				android:inputType="number"
+				android:layout_width="match_parent"
+				android:text="0"
+				android:id="@+id/siz"
+				style="@style/OneLineEdit"
+				android:hint="@string/imgsize"/>
+
+		</android.support.design.widget.TextInputLayout>
+
+		<Spinner
+			style="@style/Widget.AppCompat.Spinner.Underlined"
+			android:layout_height="48dp"
+			android:layout_gravity="bottom"
+			android:id="@id/size_unit"
+			android:layout_width="wrap_content"
+			android:entries="@array/bit_unit"/>
+
+	</LinearLayout>
+
+</LinearLayout>
+

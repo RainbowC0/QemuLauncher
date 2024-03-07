@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:orientation="vertical"
+	android:paddingLeft="?attr/dialogPreferredPadding"
+	android:paddingRight="?attr/dialogPreferredPadding">
+
+	<EditText
+		android:id="@android:id/edit"
+		android:layout_height="wrap_content"
+		android:inputType="numberDecimal"
+		android:layout_width="match_parent"/>
+
+	<LinearLayout
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		android:orientation="horizontal">
+
+		<CheckBox
+			android:layout_height="match_parent"
+			android:layout_width="match_parent"
+			android:text="核数"
+			android:layout_weight="1.0"
+			android:id="@+id/confsmpCheckBox1"/>
+
+		<EditText
+			android:layout_height="wrap_content"
+			android:inputType="numberDecimal"
+			android:layout_width="match_parent"
+			android:layout_weight="1.0"
+			android:enabled="false"
+			android:id="@+id/confsmpEditText1"/>
+
+	</LinearLayout>
+
+	<LinearLayout
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		android:orientation="horizontal">
+
+		<CheckBox
+			android:layout_height="match_parent"
+			android:layout_width="match_parent"
+			android:text="线程数"
+			android:layout_weight="1.0"
+			android:id="@+id/confsmpCheckBox2"/>
+
+		<EditText
+			android:layout_height="wrap_content"
+			android:inputType="numberDecimal"
+			android:layout_width="match_parent"
+			android:layout_weight="1.0"
+			android:enabled="false"
+			android:id="@+id/confsmpEditText2"/>
+
+	</LinearLayout>
+
+</LinearLayout>
+

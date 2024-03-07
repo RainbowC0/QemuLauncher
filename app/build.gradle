@@ -1,0 +1,38 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 28
+
+    defaultConfig {
+        applicationId "cn.qemu.launcher"
+        minSdkVersion 19
+        targetSdkVersion 28
+        versionCode 5
+        versionName "1.1.1"
+    }
+
+	/*signingConfigs {
+        release {
+            storeFile file('testkey_untrusted.jks')
+            keyAlias 'alias'
+            storePassword 'xrj45yWGLbsO7W0v'
+            keyPassword 'xrj45yWGLbsO7W0v'
+        }
+    }*/
+
+    buildTypes {
+        release {
+            minifyEnabled true
+			shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies{
+	api project(':library')
+	api 'com.android.support:recyclerview-v7:26.0.0'
+	api 'com.android.support:preference-v14:26.0.0'
+	api 'com.android.support:design:26.0.0'
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+}

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_height="wrap_content"
+	android:layout_width="match_parent"
+	android:orientation="vertical"
+	android:paddingLeft="?attr/dialogPreferredPadding"
+	android:paddingRight="?attr/dialogPreferredPadding">
+
+	<include layout="@layout/inc_open"/>
+
+	<TextView
+		android:layout_height="wrap_content"
+		android:text="@string/csize"
+		android:layout_width="wrap_content"
+		android:layout_marginTop="16dp"
+		android:paddingLeft="4dp"
+		style="@style/TextAppearance.AppCompat.Caption"/>
+
+	<LinearLayout
+		android:layout_height="wrap_content"
+		android:layout_width="match_parent"
+		android:orientation="horizontal"
+		android:gravity="bottom">
+
+		<Spinner
+			style="@style/Widget.AppCompat.Spinner.Underlined"
+			android:layout_height="match_parent"
+			android:entries="@array/adjust_orientation"
+			android:layout_width="wrap_content"
+			android:id="@+id/adjust_sign"/>
+
+		<EditText
+			android:layout_height="wrap_content"
+			android:inputType="number"
+			android:layout_width="match_parent"
+			android:layout_weight="1"
+			android:id="@+id/imgsizeEditText2"
+			android:text="0"
+			style="@style/OneLineEdit"/>
+
+		<Spinner
+			style="@style/Widget.AppCompat.Spinner.Underlined"
+			android:layout_height="match_parent"
+			android:layout_width="wrap_content"
+			android:id="@id/size_unit"
+			android:entries="@array/bit_unit"/>
+
+	</LinearLayout>
+
+</LinearLayout>
+
