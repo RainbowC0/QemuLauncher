@@ -10,4 +10,4 @@ liberapay: # Replace with a single Liberapay username
 issuehunt: # Replace with a single IssueHunt username
 lfx_crowdfunding: # Replace with a single LFX Crowdfunding project-name e.g., cloud-foundry
 polar: # Replace with a single Polar username
-custom: ['https://img.alicdn.com/imgextra/i4/2202154267212/O1CN01viv1hZ2399MEwzJPt_!!2202154267212.jpg', 'https://paypal.me/RainbowC0']# Replace with up to 4 custom sponsorship URLs e.g., ['link1', 'link2']
+custom: ['https://img-blog.csdnimg.cn/9c04559a3e064e8786d8aad9d6dababd.jpg', 'https://paypal.me/RainbowC0'] # Replace with up to 4 custom sponsorship URLs e.g., ['link1', 'link2']
