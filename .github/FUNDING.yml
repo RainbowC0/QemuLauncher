@@ -1,6 +1,6 @@
 # These are supported funding model platforms
 
-github: [RainbowC0] # Replace with up to 4 GitHub Sponsors-enabled usernames e.g., [user1, user2]
+github: # Replace with up to 4 GitHub Sponsors-enabled usernames e.g., [user1, user2]
 patreon: # Replace with a single Patreon username
 open_collective: # Replace with a single Open Collective username
 ko_fi: # Replace with a single Ko-fi username
@@ -10,4 +10,4 @@ liberapay: # Replace with a single Liberapay username
 issuehunt: # Replace with a single IssueHunt username
 lfx_crowdfunding: # Replace with a single LFX Crowdfunding project-name e.g., cloud-foundry
 polar: # Replace with a single Polar username
-custom: # Replace with up to 4 custom sponsorship URLs e.g., ['link1', 'link2']
+custom: ['https://img.alicdn.com/imgextra/i4/2202154267212/O1CN01viv1hZ2399MEwzJPt_!!2202154267212.jpg', 'https://paypal.me/RainbowC0']# Replace with up to 4 custom sponsorship URLs e.g., ['link1', 'link2']
