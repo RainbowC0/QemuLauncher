@@ -7,19 +7,17 @@ import android.support.annotation.NonNull;
 import android.support.annotation.RestrictTo;
 import android.view.View;
 import android.view.KeyEvent;
-import android.widget.TextView;
-import android.widget.EditText;
 import android.support.v7.preference.*;
-import android.widget.ListView;
 import cn.qemu.launcher.adapter.*;
 import cn.qemu.launcher.R;
-import android.widget.HorizontalScrollView;
 import android.view.inputmethod.*;
 import java.io.*;
 import java.util.*;
 import org.zhoutz.utils.*;
+import android.widget.*;
 
-public class DirPreferenceDialogFragment extends PreferenceDialogFragmentCompat {
+public class DirPreferenceDialogFragment extends PreferenceDialogFragmentCompat
+implements EditText.OnEditorActionListener, AdapterView.OnItemClickListener {
 
     private EditText mEditText;
 	private ListView mListView;
@@ -48,35 +46,35 @@ public class DirPreferenceDialogFragment extends PreferenceDialogFragmentCompat 
 		if(mText==null)mText="/";
 		mEditText.setText(mText);
 		mEditText.setSelection(mEditText.getText().length());
-		mEditText.setOnEditorActionListener(new EditText.OnEditorActionListener(){
-			@Override public boolean onEditorAction(TextView p1,int p2,KeyEvent p3){
-				if(p2==EditorInfo.IME_ACTION_GO){
-					String path=p1.getText().toString();
-					if(new File(path).isDirectory())
-						it.setList(getFlist(path));
-					else
-						mEditText.setError(getText(R.string.path_invalid));
-				}
-				return true;
-			}
-		});
+		mEditText.setOnEditorActionListener(this);
 		mListView=view.findViewById(android.R.id.list_container);
 		it=new ListItemAdapter(getActivity(),getFlist(mText.toString()));
 		mListView.setAdapter(it);
-		mListView.setOnItemClickListener(new ListView.OnItemClickListener(){
-			@Override public void onItemClick(android.widget.AdapterView<?> p,View v,int pos,long pps){
-				String st=((Item)p.getAdapter().getItem(pos)).title;
-				String pat=mEditText.getText().toString();
-				if(pos==0&&"..".equals(st))
-					pat=new File(pat).getParent();
-				else
-					pat+=pat.endsWith("/")?st:"/"+st;
-				mEditText.setText(pat);
-				mEditText.setSelection(pat.length());
-				it.setList(getFlist(pat));
-			}
-		});
+		mListView.setOnItemClickListener(this);
     }
+
+	@Override public boolean onEditorAction(TextView p1,int p2,KeyEvent p3){
+		if(p2==EditorInfo.IME_ACTION_GO){
+			String path=p1.getText().toString();
+			if(new File(path).isDirectory())
+				it.setList(getFlist(path));
+			else
+				mEditText.setError(getText(R.string.path_invalid));
+		}
+		return true;
+	}
+
+	@Override public void onItemClick(AdapterView<?> p,View v,int pos,long pps){
+		String st=((Item)p.getAdapter().getItem(pos)).title;
+		String pat=mEditText.getText().toString();
+		if(pos==0&&"..".equals(st))
+			pat=new File(pat).getParent();
+		else
+			pat+=pat.endsWith("/")?st:"/"+st;
+		mEditText.setText(pat);
+		mEditText.setSelection(pat.length());
+		it.setList(getFlist(pat));
+	}
 
     private DirPreference getDirPreference() {
         return (DirPreference) getPreference();

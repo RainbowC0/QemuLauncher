@@ -11,12 +11,16 @@ import cn.qemu.launcher.adapter.*;
 import java.util.*;
 import android.support.design.widget.*;
 import cn.qemu.launcher.application.*;
+import android.support.v7.app.AlertDialog.Builder;
 
-public class NetCardActivity extends AppCompatActivity{
+public class NetCardActivity extends AppCompatActivity 
+implements DialogInterface.OnClickListener, AdapterView.OnItemClickListener, CompoundButton.OnCheckedChangeListener {
 	ListView list;
 	SharedPreferences conf;
 	String[] networkCards;
 	ArrayList<String> ls = new ArrayList<String>();
+	private int mPos;
+	private View transV;
 
 	@Override protected void onCreate(Bundle savedInstanceState){
 		SharedPreferences set=getSharedPreferences(MainApplication.PREF_SETTINGS, MODE_PRIVATE);
@@ -39,15 +43,13 @@ public class NetCardActivity extends AppCompatActivity{
 		conf = getSharedPreferences("configuration", MODE_PRIVATE);
 		for (String s:conf.getString("net_card"," ").split("\\s+"))
 			ls.add(s);
-		final NetCardsAdapter aap=new NetCardsAdapter(this, ls);
+		NetCardsAdapter aap=new NetCardsAdapter(this, ls);
 		list.setAdapter(aap);
-		list.setOnItemClickListener(new AdapterView.OnItemClickListener(){
-			@Override public void onItemClick(AdapterView<?> p1,View p2,int p3,long p4){
-				showEditDialog(p3,aap.getItem(p3));
-			}
-		});
+		list.setOnItemClickListener(this);
 	}
-
+	@Override public void onItemClick(AdapterView<?> p1,View p2,int p3,long p4){
+		showEditDialog(p3, (String)p1.getItemAtPosition(p3));
+	}
 	@Override public boolean onOptionsItemSelected(MenuItem item){
 		switch(item.getItemId()){
 			case android.R.id.home:
@@ -70,12 +72,8 @@ public class NetCardActivity extends AppCompatActivity{
 		if (pos > -1)
 			sp.setSelection(((ArrayAdapter<String>)sp.getAdapter()).getPosition(ACode.sj(content,"model=",",")));
 		final CheckBox ad = v.findViewById(R.id.net_advance);
-		final View lin = v.findViewById(R.id.net_adlayout);
-		ad.setOnCheckedChangeListener(new CheckBox.OnCheckedChangeListener(){
-			public void onCheckedChanged(CompoundButton ck,boolean bool){
-				lin.setVisibility(bool?View.VISIBLE:View.GONE);
-			}
-		});
+		transV = v.findViewById(R.id.net_adlayout);
+		ad.setOnCheckedChangeListener(this);
 		final TextInputEditText ev = v.findViewById(R.id.net_vlan);
 		final TextInputEditText en = v.findViewById(R.id.net_name);
 		final TextInputEditText em = v.findViewById(R.id.net_mac);
@@ -85,12 +83,12 @@ public class NetCardActivity extends AppCompatActivity{
 			en.setText(ACode.sj(content,"name=",","));
 			em.setText(ACode.sj(content,"macaddr=",","));
 		}
-		AlertDialog.Builder bd=new AlertDialog.Builder(this)
-		.setTitle("配置网卡")
-		.setView(v)
-		.setPositiveButton(android.R.string.ok,new DialogInterface.OnClickListener(){
+		Builder bd=new Builder(this);
+		bd.setTitle("配置网卡");
+		bd.setView(v);
+		bd.setPositiveButton(android.R.string.ok,new DialogInterface.OnClickListener(){
 			@Override public void onClick(DialogInterface p1,int p2){
-				StringBuffer str = new StringBuffer("model=").append(sp.getSelectedItem().toString());
+				StringBuilder str = new StringBuilder("model=").append(sp.getSelectedItem().toString());
 				if(ad.isChecked()){
 					if(ev.length()>0)str.append(",vlan=").append(ev.getText());
 					if(en.length()>0)str.append(",name=").append(en.getText());
@@ -100,31 +98,37 @@ public class NetCardActivity extends AppCompatActivity{
 				else ls.add(str.toString());
 				((NetCardsAdapter)list.getAdapter()).notifyDataSetChanged();
 			}
-		})
-		.setNegativeButton(android.R.string.cancel,null);
+		});
+		bd.setNegativeButton(android.R.string.cancel,null);
 		if(pos>-1){
-			bd.setNeutralButton(R.string.delete,new DialogInterface.OnClickListener(){
-				@Override public void onClick(DialogInterface p1,int p2){
-					new AlertDialog.Builder(NetCardActivity.this)
-					.setIcon(R.drawable.ic_warning_amber_24dp)
-					.setTitle("警告")
-					.setMessage("确定删除该网卡？")
-					.setPositiveButton(android.R.string.ok,new DialogInterface.OnClickListener(){
-						@Override public void onClick(DialogInterface p1,int p2){
-							ls.remove(pos);((NetCardsAdapter)list.getAdapter()).notifyDataSetChanged();
-						}
-					})
-					.setNegativeButton(android.R.string.cancel,null)
-					.create().show();
-				}
-			});
+			mPos = pos;
+			bd.setNeutralButton(R.string.delete, this);
 		}
+		bd.create().show();
+	}
+
+	public void onCheckedChanged(CompoundButton ck,boolean bool){
+		transV.setVisibility(bool?View.VISIBLE:View.GONE);
+	}
+
+	@Override public void onClick(DialogInterface p1,int p2){
+		Builder bd = new Builder(this);
+		bd.setIcon(R.drawable.ic_warning_amber_24dp);
+		bd.setTitle("警告");
+		bd.setMessage("确定删除该网卡？");
+		bd.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener(){
+			@Override public void onClick(DialogInterface p1,int p2){
+				ls.remove(mPos);
+				((NetCardsAdapter)list.getAdapter()).notifyDataSetChanged();
+			}
+		});
+		bd.setNegativeButton(android.R.string.cancel,null);
 		bd.create().show();
 	}
 
 	@Override
 	public void finish(){
-		StringBuffer as = new StringBuffer();
+		StringBuilder as = new StringBuilder();
 		for(String a:ls)
 			as.append(a).append(' ');
 		conf.edit().putString("net_card", as.append(' ').toString()).commit();

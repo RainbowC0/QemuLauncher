@@ -48,13 +48,15 @@ import android.os.*;
 import cn.qemu.launcher.application.*;
 import android.support.design.widget.*;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener{
+public class MainActivity extends AppCompatActivity
+implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener, DialogInterface.OnClickListener {
 	private String HOME,SH_PATH;
 	public static String SDHOME = android.os.Environment.getExternalStorageDirectory().getPath(), SELECTEDPATH="_selectedpath";
 	private String[] fragtag = new String[4];
 	private static long last = System.currentTimeMillis()-2000L;
 	private Fragment[] fraglist = new Fragment[4];
 	private FrameLayout fam;
+	private TextView transTx;
 	DrawerLayout drawer;
 	byte lastfrag = 0;
 	public ACode in = new ACode(this);
@@ -174,44 +176,44 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
 	public void selectDir(View view) {
-		Intent it=new Intent(MainActivity.this, FileActivity.class)
-		.putExtra(FileActivity.FDF, FileActivity.DIR);
+		Intent it=new Intent(MainActivity.this, FileActivity.class);
+		it.putExtra(FileActivity.FDF, FileActivity.DIR);
 		startActivityForResult(it, 1);
 	}
 
 	public void selectFile(View view) {
-		Intent it=new Intent(MainActivity.this, FileActivity.class)
-		.putExtra(FileActivity.FDF, FileActivity.FILE);
+		Intent it=new Intent(MainActivity.this, FileActivity.class);
+		it.putExtra(FileActivity.FDF, FileActivity.FILE);
 		startActivityForResult(it, 1);
 	}
 
 	public void selectFAD(View view) {
-		Intent it=new Intent(MainActivity.this, FileActivity.class)
-		.putExtra(FileActivity.FDF, FileActivity.FAD);
+		Intent it=new Intent(MainActivity.this, FileActivity.class);
+		it.putExtra(FileActivity.FDF, FileActivity.FAD);
 		startActivityForResult(it, 1);
 	}
 
 	public void addNew(View v) {
-		final View c = View.inflate(this, R.layout.conf_text, null);
-		new AlertDialog.Builder(this)
-			.setTitle(R.string.addnew)
-			.setView(c)
-			.setNegativeButton(android.R.string.cancel, null)
-			.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-				public void onClick(DialogInterface d, int p) {
-					String cfn = ((EditText)c.findViewById(android.R.id.edit)).getText().toString();
-					if (!cfn.endsWith(".sh")) {
-						cfn += ".sh";
-					}
-					Intent it = new Intent(MainActivity.this, EditActivity.class)
-						.putExtra("conf_name", cfn)
-						.putExtra("new", true);
-					startActivityForResult(it, 1);
-				}
-			})
-			.create().show();
+		View c = View.inflate(this, R.layout.conf_text, null);
+		transTx = c.findViewById(android.R.id.edit);
+		Builder bd = new Builder(this);
+		bd.setTitle(R.string.addnew);
+		bd.setView(c);
+		bd.setNegativeButton(android.R.string.cancel, null);
+		bd.setPositiveButton(android.R.string.ok, this);
+		bd.create().show();
 	}
 
+	public void onClick(DialogInterface d, int p) {
+		String cfn = transTx.getText().toString();
+		if (!cfn.endsWith(".sh")) {
+			cfn += ".sh";
+		}
+		Intent it = new Intent(MainActivity.this, EditActivity.class);
+		it.putExtra("conf_name", cfn);
+		it.putExtra("new", true);
+		startActivityForResult(it, 1);
+	}
 /*
 	public void save(View view){
 		if(pz.getSelectedItem().toString().endsWith(".sh"))
@@ -689,10 +691,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 */
 
 	public void showSnack(CharSequence str, CharSequence act, View.OnClickListener onc){
-		Snackbar.make(lastfrag==0?findViewById(R.id.activitymainFloatingActionButton1):fraglist[lastfrag].getView(),
-			str,Snackbar.LENGTH_SHORT)
-			.setAction(act,onc)
-			.show();
+		Snackbar sb = Snackbar.make(lastfrag==0?findViewById(R.id.activitymainFloatingActionButton1):fraglist[lastfrag].getView(),
+			str,Snackbar.LENGTH_SHORT);
+		sb.setAction(act,onc);
+		sb.show();
+	}
+
+	public void onClick (View p) {
+		finish();
 	}
 
 	@Override
@@ -710,15 +716,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 			}
 			long now = System.currentTimeMillis();
 			if (now-last > 2000L) {
-				showSnack(
-					"再按一次退出",
-					getText(android.R.string.ok),
-					new View.OnClickListener() {
-						public void onClick (View p) {
-							finish();
-							System.exit(0);
-						}
-					});
+				showSnack("再按一次退出",getText(android.R.string.ok),this);
 				last = now;
 				return false;
 			} else {

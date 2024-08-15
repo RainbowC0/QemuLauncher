@@ -28,6 +28,8 @@ import android.content.res.*;
 import android.support.v4.content.res.*;
 import cn.qemu.launcher.application.*;
 import android.graphics.*;
+import android.support.v7.app.*;
+import android.support.v4.app.*;
 
 public class EditActivity extends AppCompatActivity {
 
@@ -50,10 +52,10 @@ public class EditActivity extends AppCompatActivity {
 			getTheme().resolveAttribute(R.attr.colorPrimaryDark,ty,true);
 			org.zhoutz.utils.ActivityUtil.setStatusBarColor(this,ty.data);
 		}
-		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-		String confName = getIntent().getStringExtra("conf_name");
+		Intent it = getIntent();
+		String confName = it.getStringExtra("conf_name");
 		confPath = String.format("%s/%s", getSharedPreferences(MainApplication.PREF_SETTINGS, MODE_PRIVATE).getString("sh_path","/sdcard/Qemu"), confName);
-		_new = getIntent().getBooleanExtra("new", false);
+		_new = it.getBooleanExtra("new", false);
 		if (!_new) {
 			if (confName.endsWith(".sh"))
 				readSh(confPath);
@@ -62,8 +64,12 @@ public class EditActivity extends AppCompatActivity {
 				confPath = confPath.substring(0, confPath.length()-4) + "sh";
 			}
 		}
-		getSupportActionBar().setTitle(confName);
-		getSupportFragmentManager().beginTransaction().add(android.R.id.content, new ConfFragment(), "tsh").commit();
+		ActionBar ab = getSupportActionBar();
+		ab.setDisplayHomeAsUpEnabled(true);
+		ab.setTitle(confName);
+		FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+		ft.add(android.R.id.content, new ConfFragment(), "tsh");
+		ft.commit();
 	}
 
 	@Override
@@ -75,13 +81,13 @@ public class EditActivity extends AppCompatActivity {
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		if (!_new) {
-			MenuItem mi = menu.add(Menu.NONE, EDIT_DELETE, 0, R.string.delete)
-			.setIcon(R.drawable.baseline_delete_24);
+			MenuItem mi = menu.add(Menu.NONE, EDIT_DELETE, 0, R.string.delete);
+			mi.setIcon(R.drawable.baseline_delete_24);
 			mi.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
 			DrawableCompat.setTint(mi.getIcon(), Color.WHITE);
 		}
-		MenuItem mi = menu.add(Menu.NONE, EDIT_SAVE, 1, R.string.save)
-		.setIcon(R.drawable.baseline_save_24);
+		MenuItem mi = menu.add(Menu.NONE, EDIT_SAVE, 1, R.string.save);
+		mi.setIcon(R.drawable.baseline_save_24);
 		mi.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
 		DrawableCompat.setTint(mi.getIcon(), Color.WHITE);
 		return true;

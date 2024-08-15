@@ -20,10 +20,12 @@ import cn.qemu.launcher.activity.*;
 
 public class ConfFragment
 	extends PreferenceFragmentCompat
-	implements SharedPreferences.OnSharedPreferenceChangeListener, Preference.OnPreferenceClickListener
+	implements SharedPreferences.OnSharedPreferenceChangeListener,
+	Preference.OnPreferenceClickListener, Preference.OnPreferenceChangeListener
 {
 	VMR v = new VMR();
 	DiskPreference dip;
+	private ListPreference mCpu, mMachine;
 
 	private Preference.OnPreferenceClickListener dic = new Preference.OnPreferenceClickListener() {
 		@Override
@@ -49,9 +51,11 @@ public class ConfFragment
 		final ListPreference cpu=(ListPreference)findPreference("cpu");
 		cpu.setEntries(v.getCPUMode(arch.getValue()));
 		cpu.setEntryValues(v.getCPUMode(arch.getValue()));
+		mCpu = cpu;
 		final ListPreference machine=(ListPreference)findPreference("machine");
 		machine.setEntries(v.getMachine(arch.getValue()));
 		machine.setEntryValues(v.getMachine(arch.getValue()));
+		mMachine = machine;
 		ListPreference gprf = (ListPreference)findPreference("graphics");
 		gprf.setOnPreferenceChangeListener(new ChangeEnable("port","sdl"));
 		findPreference("port").setEnabled(!"sdl".equals(gprf.getValue()));
@@ -67,16 +71,7 @@ public class ConfFragment
 		Preference netc = findPreference("net_card");
 		netc.setEnabled(!"none".equals(v));
 		netc.setOnPreferenceClickListener(this);
-		arch.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener(){
-				@Override
-				public boolean onPreferenceChange(Preference p, Object obj) {
-					cpu.setEntries(v.getCPUMode((String)obj));
-					cpu.setEntryValues(v.getCPUMode((String)obj));
-					machine.setEntries(v.getMachine((String)obj));
-					machine.setEntryValues(v.getMachine((String)obj));
-					return true;
-				}
-			});
+		arch.setOnPreferenceChangeListener(this);
 		for (int i=0,l=getPreferenceScreen().getPreferenceCount();i<l;i++) {
 			Preference p=getPreferenceScreen().getPreference(i);
 			if (p instanceof PreferenceCategory)
@@ -96,6 +91,20 @@ public class ConfFragment
 					}
 				}
 		}
+	}
+
+	@Override
+	public boolean onPreferenceChange(Preference p, Object obj) {
+		ListPreference l = mCpu;
+		VMR vv = v;
+		String[] cm = vv.getCPUMode((String)obj);
+		l.setEntries(cm);
+		l.setEntryValues(cm);
+		l = mMachine;
+		cm = vv.getMachine((String)obj);
+		l.setEntries(cm);
+		l.setEntryValues(cm);
+		return true;
 	}
 
 	@Override

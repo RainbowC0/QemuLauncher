@@ -3,6 +3,8 @@ package cn.qemu.launcher.fragment;
 import android.support.v4.app.Fragment;
 import android.view.*;
 import android.os.Bundle;
+import android.os.Message;
+import android.os.Handler;
 import cn.qemu.launcher.R;
 import org.zhoutz.utils.*;
 import android.support.v7.app.*;
@@ -15,6 +17,7 @@ import java.text.*;
 import android.support.graphics.drawable.*;
 import android.widget.*;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AlertDialog.Builder;
 import android.content.DialogInterface;
 import cn.qemu.launcher.utils.*;
 import java.io.*;
@@ -28,10 +31,14 @@ import android.content.*;
 import cn.qemu.launcher.application.*;
 import android.graphics.*;
 import java.util.concurrent.*;
+import android.view.View.*;
+import android.support.v7.util.*;
 
 public class MainFragment extends Fragment
-implements FileFilter, DialogInterface.OnClickListener, View.OnClickListener {
-	private View floatbutton, infov;
+implements FileFilter, DialogInterface.OnClickListener, View.OnClickListener,
+AdapterView.OnItemSelectedListener, Runnable {
+	public static final int LOG = 0, UNZIP_FAILED = 1, HALTED = 2, STARTED = 3;
+	private View floatbutton, infov, transV;
 	private ListView list;
 	private TextView pth;
 	private MainActivity ma;
@@ -40,6 +47,34 @@ implements FileFilter, DialogInterface.OnClickListener, View.OnClickListener {
 	private ACode in;
 	private ArrayList<Item> array = new ArrayList<Item>();
 	private ItemAdapter adp;
+	private File obb;
+	private Handler hd = new Handler(){
+		@Override
+		public void handleMessage(Message msg) {
+			switch (msg.what) {
+				case LOG:
+					pth.append((String)msg.obj);
+					pth.append("\n");
+					break;
+				case UNZIP_FAILED:
+					in.tw("解压失败\n错误信息: " + msg.obj, 1, ma.RED);
+					break;
+				case HALTED:
+					Builder bd = new Builder(ma);
+					bd.setIcon(R.drawable.ic_warning_amber_24dp);
+					bd.setTitle(R.string.run_err);
+					bd.setMessage("运行结束或配置出错，虚拟机已停止运行");
+					bd.setNegativeButton(android.R.string.cancel,null);
+					bd.setPositiveButton(R.string.view_log, (DialogInterface.OnClickListener)msg.obj);
+					bd.create().show();
+					break;
+				case STARTED:
+					ma.in.tw(ma.getText(R.string.running),Toast.LENGTH_SHORT,ma.getResources().getColor(R.color.green));
+					((android.support.v7.widget.AppCompatImageView)msg.obj).setImageResource(R.drawable.ic_stop_black_24dp);
+					break;
+			}
+		}
+	};
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -95,6 +130,10 @@ implements FileFilter, DialogInterface.OnClickListener, View.OnClickListener {
 		adp.notifyDataSetInvalidated();
 	}
 
+	public void sendMessage(Message msg) {
+		hd.sendMessage(msg);
+	}
+
 	@Override public void onCreateOptionsMenu(Menu menu, MenuInflater me) {
 		menu.clear();
 		me.inflate(R.menu.main, menu);
@@ -118,61 +157,167 @@ implements FileFilter, DialogInterface.OnClickListener, View.OnClickListener {
 		((TextView)alt.getWindow().getDecorView().findViewById(R.id.message)).setText(chr);
 	}
 
-
 	private void installQemu() {
- 		in.utw(null, getText(R.string.install_title), getText(R.string.install), new CharSequence[]{getText(android.R.string.ok),getText(android.R.string.cancel)}, false, new DialogInterface.OnClickListener[]{this,null});
+ 		in.utw(null, getText(R.string.install_title), getText(R.string.install), new CharSequence[]{getText(android.R.string.ok),getText(android.R.string.cancel)}, false, new DialogInterface.OnClickListener[]{
+				   new DialogInterface.OnClickListener(){
+					   @Override
+					   public void onClick(DialogInterface p1, int p) {
+						   File ob = new File(String.format("%s/%s.obb", ma.getObbDir().getPath(), ma.getPackageName()));
+						   if (ob.isFile())
+							   unzip(ob);
+						   else in.utw(R.drawable.ic_warning_amber_24dp, "没有数据文件", "未发现数据文件：" + ob.getPath(), new CharSequence[]{getText(android.R.string.ok)}, false, new DialogInterface.OnClickListener[]{null});
+					   }},null});
 	}
 
-	@Override
-	public void onClick(DialogInterface p1, int p) {
-		File obb = new File(String.format("%s/%s.obb", ma.getObbDir().getPath(), ma.getPackageName()));
-		if (obb.isFile())
-			unzip(obb);
-		else in.utw(R.drawable.ic_warning_amber_24dp, "没有数据文件", "未发现数据文件：" + obb.getPath(), new CharSequence[]{getText(android.R.string.ok)}, false, new DialogInterface.OnClickListener[]{null});
-	}
+	private OnClickListener onc = new View.OnClickListener(){
+		public void onClick(View v) {
+			ma.selectFile(v);
+		}
+	};
 
 	public void viewLog() {
-		try {
-			final AlertDialog ad = new AlertDialog.Builder(ma)
-				.setTitle(R.string.log)
-				.setMessage("")
-				.setPositiveButton(android.R.string.cancel, null)
-				.setNegativeButton(android.R.string.copy, new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface d, int p) {
-						CharSequence ms = ((TextView)infov.findViewById(android.R.id.message)).getText();
-						in.clp(ms);
-						in.tw(getText(R.string.copied), 1, ma.GREEN);
+		final Builder adb = new Builder(ma);
+		adb.setTitle(R.string.log);
+		adb.setMessage("");
+		adb.setPositiveButton(android.R.string.cancel, null);
+		adb.setNegativeButton(android.R.string.copy, this);
+		adb.setNeutralButton(R.string.clear_log, new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface d, int p) {
+					try {
+						VMR.exec("logcat -c").waitFor();
+					} catch (Exception e) {
+						e.printStackTrace();
 					}
-				})
-				.setNeutralButton(R.string.clear_log, new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface d, int p) {
-						try {
-							VMR.exec("logcat -c");
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
+				}
+			});
+		AlertDialog ad = adb.create();
+		ad.show();
+		infov = ad.getWindow().getDecorView().findViewById(R.id.parentPanel);
+		pth = infov.findViewById(android.R.id.message);
+		pth.setTextIsSelectable(true);
+		pth.setTypeface(Typeface.MONOSPACE);
+		pth.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.f);
+		new Thread(){
+			public void run() {
+				SharedPreferences sp = ma.getSharedPreferences(MainApplication.PREF_SETTINGS, MainApplication.MODE_PRIVATE);
+				try {
+					Process p = VMR.exec("logcat " + sp.getString("logcat_params", ""));
+					BufferedReader is = new BufferedReader(new InputStreamReader(p.getInputStream()));
+					String l;
+					while ((l = is.readLine()) != null) {
+						Message msg = new Message();
+						msg.what = LOG;
+						msg.obj = l;
+						hd.sendMessage(msg);
 					}
-				})
-				.create();
-			ad.show();
-			infov = ad.getWindow().getDecorView().findViewById(R.id.parentPanel);
-			pth = infov.findViewById(android.R.id.message);
-			pth.setTextIsSelectable(true);
-			pth.setTypeface(Typeface.MONOSPACE);
-			pth.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12.f);
-			SharedPreferences sp = ma.getSharedPreferences(MainApplication.PREF_SETTINGS, MainApplication.MODE_PRIVATE);
-			Process p = VMR.exec("logcat " + sp.getString("logcat_params", "*:V"));
-			BufferedReader is = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			String l;
-			while ((l = is.readLine()) != null) {
-				pth.append(l);
-				pth.append("\n");
-			}
-			is.close();
-			p.destroy();
-		} catch (Exception e) {
-			e.printStackTrace();
+					is.close();
+					p.destroy();
+				} catch (Exception e) {
+					e.printStackTrace();
+					Log.e("viewlog", e.getMessage());
+				}
+			}}.start();
+	}
+
+	private class Resize implements Runnable, DialogInterface.OnClickListener {
+		Resize(Spinner s, TextView n, Spinner t) {
+			sign = s;
+			num = n;
+			unit = t;
 		}
+		Spinner sign, unit;
+		TextView num;
+		@Override public void onClick(DialogInterface dig, int idx) {
+			showProgressDialog(getText(R.string.resizing));
+			new Thread(this).start();
+		}
+		@Override public void run() {
+			String sg = sign.getSelectedItem().toString(),
+				pt = pth.getText().toString(),
+				nu = num.getText().toString(),
+				un = unit.getSelectedItem().toString();
+			String comd = String.format("$PREF ./qemu-img resize %s%s %s%s%s", "-".equals(sg) && pt.matches(".+\\.qcow2?") ?"--shrink ": "", pt, sg, nu, un);
+			try {
+				runCmd(comd);
+				ACode.sw(floatbutton, getText(R.string.operation_completed));
+			} catch (Exception e) {
+				ACode.sw(floatbutton, getText(R.string.operation_error));
+				e.printStackTrace();
+			}
+			alt.dismiss();
+		}
+	}
+
+	private class Create implements Runnable, DialogInterface.OnClickListener {
+		Create(View u) {
+			ut = u;
+		}
+		View ut;
+		public void onClick(DialogInterface dig, int ind) {
+			showProgressDialog(getText(R.string.creating));
+			new Thread(this).start();
+		}
+		public void run() {
+			Spinner a = ut.findViewById(R.id.disk_format);
+			String x0 = a.getSelectedItem().toString();
+			String x1 = pth.getText().toString();
+			EditText b = ut.findViewById(R.id.nam);
+			String x2 = b.getText().toString();
+			b = ut.findViewById(R.id.siz);
+			String x3 = b.getText().toString();
+			a = ut.findViewById(R.id.size_unit);
+			String x4 = a.getSelectedItem().toString();
+			String comd = String.format("$PREF ./qemu-img create -f %1$s %2$s/%3$s.%1$s %4$s%5$s", x0, x1, x2, x3, x4);
+			try {
+				runCmd(comd);
+				ACode.sw(floatbutton, getText(R.string.operation_completed));
+			} catch (Exception e) {
+				ACode.sw(floatbutton, getText(R.string.operation_error));
+				e.printStackTrace();
+			}
+			alt.dismiss();
+		}
+	}
+
+	private class Convert implements Runnable, DialogInterface.OnClickListener {
+		Convert(View r, Spinner f) {
+			root = r;
+			fmtv = f;
+		}
+		View root;
+		Spinner fmtv;
+
+		public void onClick(DialogInterface p1, int p2) {
+			showProgressDialog(getText(R.string.converting));
+			new Thread(this).start();
+		}
+
+		public void run() {
+			EditText a = root.findViewById(R.id.imgpath);
+			String ipth = a.getText().toString();
+			a = root.findViewById(R.id.output_name);
+			String nam = a.getText().toString();
+			String fmt = fmtv.getSelectedItem().toString();
+			a = root.findViewById(R.id.outputdir);
+			String opth = a.getText().toString();
+			CheckBox cprv = (CheckBox)transV;
+			String cpr = cprv.isEnabled() && cprv.isChecked() ? "-c": "";
+			String cmd = String.format("$PREF ./qemu-img convert %s -O %s %s %s/%s.%s", cpr, fmt, ipth, opth, nam, fmt);
+			try {
+				runCmd(cmd);
+				ACode.sw(floatbutton, getText(R.string.operation_completed));
+			} catch (Exception e) {
+				ACode.sw(floatbutton, getText(R.string.operation_error));
+				e.printStackTrace();
+			}
+			alt.dismiss();
+		}
+	}
+
+	@Override public void onClick(DialogInterface dlg, int p) {
+		CharSequence car = ((TextView)infov.findViewById(android.R.id.message)).getText();
+		in.clp(car);
+		in.tw(getText(R.string.copied), 1, ma.GREEN);
 	}
 
 	@Override public boolean onOptionsItemSelected(MenuItem item) {
@@ -185,98 +330,42 @@ implements FileFilter, DialogInterface.OnClickListener, View.OnClickListener {
 				View sizev = View.inflate(ma, R.layout.imgsize, null);
 				pth = sizev.findViewById(R.id.imgpath);
 				pth.setText(MainActivity.SDHOME + "/Qemu/kolibri.img");
-				sizev.findViewById(R.id.imgopen).setOnClickListener(new View.OnClickListener() {
-						public void onClick(View v) {
-							ma.selectFile(v);
-						}
-					});
-				final EditText num = sizev.findViewById(R.id.imgsizeEditText2);
-				final Spinner sign = sizev.findViewById(R.id.adjust_sign);
-				final Spinner unit = sizev.findViewById(R.id.size_unit);
-				AlertDialog.Builder abt = new AlertDialog.Builder(ma)
-					.setTitle(R.string.resize_img).setView(sizev)
-					.setPositiveButton(R.string.perform, new DialogInterface.OnClickListener() {
-						@Override public void onClick(DialogInterface dig, int idx) {
-							showProgressDialog(getText(R.string.resizing));
-							new Thread() {
-								@Override public void run() {
-									String sg = sign.getSelectedItem().toString(),
-										pt = pth.getText().toString(),
-										nu = num.getText().toString(),
-										un = unit.getSelectedItem().toString();
-									String comd = String.format("$PREF ./qemu-img resize %s%s %s%s%s", "-".equals(sg) && pt.matches(".+\\.qcow2?") ?"--shrink ": "", pt, sg, nu, un);
-									try {
-										runCmd(comd);
-										ACode.sw(floatbutton, getText(R.string.operation_completed));
-									} catch (Exception e) {
-										ACode.sw(floatbutton, getText(R.string.operation_error));
-										e.printStackTrace();
-									}
-									alt.dismiss();
-								}}
-								.start();
-						}
-					}).setNegativeButton(android.R.string.cancel, null);
-				abt.create().show();
+				sizev.findViewById(R.id.imgopen).setOnClickListener(onc);
+				Builder bd = new Builder(ma);
+				bd.setTitle(R.string.resize_img);
+				bd.setView(sizev);
+				EditText num = sizev.findViewById(R.id.imgsizeEditText2);
+				Spinner sign = sizev.findViewById(R.id.adjust_sign);
+				Spinner unit = sizev.findViewById(R.id.size_unit);
+				bd.setPositiveButton(R.string.perform, new Resize(sign, num, unit));
+				bd.setNegativeButton(android.R.string.cancel, null);
+				bd.create().show();
 				break;
 			case R.id.info:
-				AlertDialog adt = new AlertDialog.Builder(ma)
-					.setTitle(R.string.img_info)
-					.setMessage(R.string.choose_file)
-					.setPositiveButton(R.string.open, null)
-					.setNegativeButton(android.R.string.cancel, null)
-					.setNeutralButton(android.R.string.copy, new DialogInterface.OnClickListener() {
-						@Override public void onClick(DialogInterface dlg, int p) {
-							CharSequence car = ((TextView)infov.findViewById(android.R.id.message)).getText();
-							in.clp(car);
-							in.tw(getText(R.string.copied), 1, ma.GREEN);
-						}
-					}).create();
+				bd = new Builder(ma);
+				bd.setTitle(R.string.img_info);
+				bd.setMessage(R.string.choose_file);
+				bd.setPositiveButton(R.string.open, null);
+				bd.setNegativeButton(android.R.string.cancel, null);
+				bd.setNeutralButton(android.R.string.copy, this);
+				AlertDialog adt = bd.create();
 				adt.show();
-				adt.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
-						public void onClick(View v) {
-							ma.selectFile(v);
-						}
-					});
+				adt.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(onc);
 				adt.getButton(AlertDialog.BUTTON_NEUTRAL).setVisibility(View.GONE);
 				infov = adt.getWindow().getDecorView().findViewById(R.id.parentPanel);
 				pth = infov.findViewById(android.R.id.message);
 				break;
 			case R.id.create:
-				final View ut = View.inflate(ma, R.layout.create_img, null);
+				View ut = View.inflate(ma, R.layout.create_img, null);
 				pth = ut.findViewById(R.id.imgpath);
 				pth.setText(MainActivity.SDHOME + "/Qemu");
 				ut.findViewById(R.id.imgopen).setOnClickListener(this);
-				new AlertDialog.Builder(ma)
-					.setTitle(R.string.newf).setView(ut)
-					.setPositiveButton(R.string.perform, new DialogInterface.OnClickListener() {
-						public void onClick(DialogInterface dig, int ind) {
-							showProgressDialog(getText(R.string.creating));
-							new Thread() {
-								public void run() {
-									Spinner a = ut.findViewById(R.id.disk_format);
-									String x0 = a.getSelectedItem().toString();
-									String x1 = pth.getText().toString();
-									EditText b = ut.findViewById(R.id.nam);
-									String x2 = b.getText().toString();
-									b = ut.findViewById(R.id.siz);
-									String x3 = b.getText().toString();
-									a = ut.findViewById(R.id.size_unit);
-									String x4 = a.getSelectedItem().toString();
-									String comd = String.format("$PREF ./qemu-img create -f %1$s %2$s/%3$s.%1$s %4$s%5$s", x0, x1, x2, x3, x4);
-									try {
-										runCmd(comd);
-										ACode.sw(floatbutton, getText(R.string.operation_completed));
-									} catch (Exception e) {
-										ACode.sw(floatbutton, getText(R.string.operation_error));
-										e.printStackTrace();
-									}
-									alt.dismiss();
-								}}
-								.start();
-						}})
-					.setNegativeButton(android.R.string.cancel, null)
-					.create().show();
+				bd = new Builder(ma);
+				bd.setTitle(R.string.newf);
+				bd.setView(ut);
+				bd.setPositiveButton(R.string.perform, new Create(ut));
+				bd.setNegativeButton(android.R.string.cancel, null);
+				bd.create().show();
 				break;
 			case R.id.convert:
 				final View root = View.inflate(ma, R.layout.img_convert, null);
@@ -292,44 +381,16 @@ implements FileFilter, DialogInterface.OnClickListener, View.OnClickListener {
 							ma.selectDir(v);
 						}
 					});
-				final CheckBox cprv = root.findViewById(R.id.compress);
-				final Spinner fmtv = root.findViewById(R.id.disk_format);
-				fmtv.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-						public void onItemSelected(AdapterView<?> p, View v, int idx, long num) {
-							cprv.setEnabled(idx < 2);
-						}
-						public void onNothingSelected(AdapterView<?> sp) {}
-					});
-				new AlertDialog.Builder(ma)
-					.setTitle(R.string.convert_format)
-					.setView(root)
-					.setPositiveButton(R.string.perform, new DialogInterface.OnClickListener() {
-						public void onClick(DialogInterface d, int e) {
-							showProgressDialog(getText(R.string.converting));
-							new Thread() {
-								public void run() {
-									EditText a = root.findViewById(R.id.imgpath);
-									String ipth = a.getText().toString();
-									a = root.findViewById(R.id.output_name);
-									String nam = a.getText().toString();
-									String fmt = fmtv.getSelectedItem().toString();
-									a = root.findViewById(R.id.outputdir);
-									String opth = a.getText().toString();
-									String cpr = cprv.isEnabled() && cprv.isChecked() ?"-c": "";
-									String cmd = String.format("$PREF ./qemu-img convert %s -O %s %s %s/%s.%s", cpr, fmt, ipth, opth, nam, fmt);
-									try {
-										runCmd(cmd);
-										ACode.sw(floatbutton, getText(R.string.operation_completed));
-									} catch (Exception e) {
-										ACode.sw(floatbutton, getText(R.string.operation_error));
-										e.printStackTrace();
-									}
-									alt.dismiss();
-								}}.start();
-						}
-					})
-					.setNegativeButton(android.R.string.cancel, null)
-					.create().show();
+				CheckBox cprv = root.findViewById(R.id.compress);
+				transV = cprv;
+				Spinner fmtv = root.findViewById(R.id.disk_format);
+				fmtv.setOnItemSelectedListener(this);
+				bd = new AlertDialog.Builder(ma);
+				bd.setTitle(R.string.convert_format);
+				bd.setView(root);
+				bd.setPositiveButton(R.string.perform, new Convert(root, fmtv));
+				bd.setNegativeButton(android.R.string.cancel, null);
+				bd.create().show();
 				break;
 			case R.id.dres:
 				in.hws("https://rainbowc0.gitee.io/qemu-res/");
@@ -369,6 +430,44 @@ implements FileFilter, DialogInterface.OnClickListener, View.OnClickListener {
 	@Override
 	public void onClick(View v) {
 		ma.selectDir(v);
+	}
+
+	public void onItemSelected(AdapterView<?> p, View v, int idx, long num) {
+		transV.setEnabled(idx < 2);
+	}
+
+	public void onNothingSelected(AdapterView<?> sp) {}
+
+	public void run() {
+		if (!ma.getFilesDir().exists())
+			ma.getFilesDir().mkdir();
+		try {
+			ZipUtil.upZipFile(obb, getContext().getFilesDir().getAbsolutePath());
+			Process p = Runtime.getRuntime().exec(VMR.shellSh(
+													  "chmod -R 771 " + ma.getFilesDir().getPath()));
+			p.waitFor();
+			ma.runOnUiThread(new Unzipped());
+		} catch (final Exception e) {
+			Message msg = new Message();
+			msg.what = UNZIP_FAILED;
+			msg.obj = e.getMessage();
+			hd.sendMessage(msg);
+			e.printStackTrace();
+		}
+		alt.dismiss();
+	}
+
+	private class Unzipped implements Runnable, DialogInterface.OnClickListener {
+		@Override
+		public void run() {
+			in.utw(null, "解压成功", "是否删除obb数据包？删除后不可重新安装", new CharSequence[]{getText(android.R.string.ok),getText(android.R.string.cancel)}, false, new DialogInterface.OnClickListener[]{
+					   this,null
+				   });
+		}
+		@Override
+		public void onClick(DialogInterface p1, int p2) {
+			obb.delete();
+		}
 	}
 
 	@Override
@@ -419,36 +518,10 @@ implements FileFilter, DialogInterface.OnClickListener, View.OnClickListener {
 		}
 	}
 
-	private void unzip(final File obb) {
+	private void unzip(File ob) {
 		showProgressDialog(getText(R.string.uncompressing));
-		new Thread() {
-			public void run() {
-				if (!ma.getFilesDir().exists())
-					ma.getFilesDir().mkdir();
-				try {
-					ZipUtil.upZipFile(obb, getContext().getFilesDir().getAbsolutePath());
-					Process p = Runtime.getRuntime().exec(VMR.shellSh(
-															  "chmod -R 771 " + ma.getFilesDir().getPath()));
-					p.waitFor();
-					ma.runOnUiThread(new Runnable(){
-							public void run() {
-								in.utw(null, "解压成功", "是否删除obb数据包？删除后不可重新安装", new CharSequence[]{getText(android.R.string.ok),getText(android.R.string.cancel)}, false, new DialogInterface.OnClickListener[]{
-										   new DialogInterface.OnClickListener(){
-											   public void onClick(DialogInterface d, int p) {
-												   obb.delete();
-											   }
-										   },null
-									   });
-							}});
-				} catch (final Exception e) {
-					ma.runOnUiThread(new Runnable() {
-							public void run() {
-								in.tw("解压失败\n错误信息: " + e.getMessage(), 1, ma.RED);
-							}});
-					e.printStackTrace();
-				}
-				alt.dismiss();
-			}}.start();
+		obb = ob;
+		new Thread(this).start();
 	}
 
 	private static void runCmd(String cmd) throws Exception {

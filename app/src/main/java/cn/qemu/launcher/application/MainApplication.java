@@ -14,7 +14,7 @@ public class MainApplication extends Application {
 		super.onCreate();
 		String pre = getCacheDir().getAbsolutePath();
 		VMR.ENV.put("TMPDIR", pre);
-		VMR.ENV.put("PROOT_TMPDIR", pre);
+		VMR.ENV.put("PROOT_TMP_DIR", pre);
 		pre = getFilesDir().getAbsolutePath();
 		VMR.setDir(new File(pre+"/bin"));
 		VMR.ENV.put("PREF", android.os.Build.VERSION.SDK_INT>25?"./proot -b ../etc/resolv.conf:/etc/resolv.conf":"");

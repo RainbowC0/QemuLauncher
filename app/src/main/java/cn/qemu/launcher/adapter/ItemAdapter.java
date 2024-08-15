@@ -19,10 +19,13 @@ import android.util.Log;
 import cn.qemu.launcher.application.*;
 import cn.qemu.launcher.fragment.*;
 import java.lang.reflect.*;
+import android.support.v7.app.AlertDialog.Builder;
+import android.os.Message;
 
 public class ItemAdapter
 	extends BaseAdapter
-	implements View.OnClickListener, View.OnLongClickListener
+	implements View.OnClickListener, View.OnLongClickListener, Runnable,
+	DialogInterface.OnClickListener, MenuItem.OnMenuItemClickListener
 {
 	private LayoutInflater mInflater;
     private List<Item> mlist;
@@ -30,6 +33,11 @@ public class ItemAdapter
 	MainFragment mf;
 	boolean is_su = false;
 	String sh_path, bios_path;
+
+	private Item mIt;
+	private String transS;
+	private View transV;
+	private int transI;
 
     public ItemAdapter(MainFragment mf, List<Item> list) {
 		ma = (MainActivity)mf.getActivity();
@@ -74,9 +82,10 @@ public class ItemAdapter
 		convertView.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				Intent it = new Intent(ma, EditActivity.class)
-				.putExtra("conf_name", mlist.get(position).title);
-				ma.startActivityForResult(it, 1);
+				MainActivity a = ma;
+				Intent it = new Intent(a, EditActivity.class);
+				it.putExtra("conf_name", mlist.get(position).title);
+				a.startActivityForResult(it, 1);
 			}
 		});
 		convertView.setOnLongClickListener(this);
@@ -85,80 +94,78 @@ public class ItemAdapter
     }
 
 	@Override
-	public void onClick(final View v) {
-		final StringBuffer pth = new StringBuffer(sh_path);
+	public void onClick(View v) {
+		StringBuilder pth = new StringBuilder(sh_path);
 		if (pth.charAt(pth.length()-1)!='/')
 			pth.append('/');
-		final Item mIt = mlist.get((int)v.getTag());
-		final String path = pth.append(mIt.title).toString();
-		if (mIt.pid == -1) {
-			new Thread() {
-				public void run() {
-					StringBuffer cmd = new StringBuffer("$PREF ").append(ACode.fr(path).trim());
-					if (cmd.indexOf(" -L ") == -1)
-						cmd.append(" -L ").append(bios_path);
-					Log.e("run-qemu", cmd.toString());
-					try {
-						String cmds = cmd.toString();
-						Process mp = is_su?VMR.execsu(cmds):VMR.exec(cmds);
-						Thread.sleep(1000L);
-						InputStream mip = mp.getInputStream();
-						byte[] mB = new byte[mip.available()];
-						mip.read(mB);
-						String mpid = new String(mB).trim();
-						Log.e("run-qemu input", mpid);
-						mip = mp.getErrorStream();
-						mB = new byte[mip.available()];
-						mip.read(mB);
-						Log.e("run-qemu error", new String(mB));
-						try {
-							mp.exitValue();
-							ma.runOnUiThread(new Runnable() {
-								public void run() {
-									new AlertDialog.Builder(ma)
-										.setIcon(R.drawable.ic_warning_amber_24dp)
-										.setTitle(R.string.run_err)
-										.setMessage("运行结束或配置出错，虚拟机已停止运行")
-										.setNegativeButton(android.R.string.cancel,null)
-										.setPositiveButton(R.string.view_log, new DialogInterface.OnClickListener(){
-											public void onClick(DialogInterface di, int p) {
-												mf.viewLog();
-											}
-										})
-										.create().show();
-								}});
-						} catch (IllegalThreadStateException ite) {
-							ma.runOnUiThread(new Runnable(){
-									public void run() {
-										ma.in.tw(ma.getText(R.string.running),Toast.LENGTH_SHORT,ma.getResources().getColor(R.color.green));
-										((android.support.v7.widget.AppCompatImageView)v).setImageResource(R.drawable.ic_stop_black_24dp);
-									}});
-							Field fp = mp.getClass().getDeclaredField("pid");
-							fp.setAccessible(true);
-							mIt.process = mp;
-							mIt.pid = getPID(fp.getInt(mp));
-							Log.e("QEMU_PID", String.valueOf(mIt.pid));
-						}
-					} catch(Exception e) {
-						e.printStackTrace();
-					}
-				}
-			}.start();
+		Item it = mlist.get((int)v.getTag());
+		transS = pth.append(it.title).toString();
+		if (it.pid == -1) {
+			transV = v;
+			mIt = it;
+			new Thread(this).start();
 		} else {
-			android.os.Process.sendSignal(mIt.pid, android.os.Process.SIGNAL_QUIT);
+			android.os.Process.sendSignal(it.pid, android.os.Process.SIGNAL_QUIT);
 			try {
-				mIt.process.waitFor();
+				it.process.waitFor();
 			} catch (InterruptedException i) {
 				i.printStackTrace();
 			}
-			mIt.process.destroyForcibly();
-			if (!mIt.process.isAlive()) {
-				ma.in.tw(ma.getText(R.string.vm_stopped),Toast.LENGTH_SHORT,ma.getResources().getColor(R.color.green));
+			it.process.destroyForcibly();
+			MainActivity a = ma;
+			ACode in = a.in;
+			if (!it.process.isAlive()) {
+				in.tw(a.getText(R.string.vm_stopped),Toast.LENGTH_SHORT,a.getResources().getColor(R.color.green));
 				((android.support.v7.widget.AppCompatImageView)v).setImageResource(R.drawable.ic_play_arrow_black_24dp);
-				mIt.process = null;
-				mIt.pid = -1;
-			} else ma.in.tw(ma.getText(R.string.vm_unstopped),Toast.LENGTH_SHORT,ma.getResources().getColor(R.color.red));
+				it.process = null;
+				it.pid = -1;
+			} else in.tw(a.getText(R.string.vm_unstopped),Toast.LENGTH_SHORT,a.getResources().getColor(R.color.red));
 		}
+	}
+
+	public void run() {
+		StringBuilder cmd = new StringBuilder("$PREF ").append(ACode.fr(transS).trim());
+		if (cmd.indexOf(" -L ") == -1)
+			cmd.append(" -L ").append(bios_path);
+		Log.e("run-qemu", cmd.toString());
+		try {
+			String cmds = cmd.toString();
+			Process mp = is_su?VMR.execsu(cmds):VMR.exec(cmds);
+			Thread.sleep(1000L);
+			InputStream mip = mp.getInputStream();
+			byte[] mB = new byte[mip.available()];
+			mip.read(mB);
+			String mpid = new String(mB).trim();
+			Log.e("run-qemu", mpid);
+			mip = mp.getErrorStream();
+			mB = new byte[mip.available()];
+			mip.read(mB);
+			Log.e("run-qemu", new String(mB));
+			Message msg = new Message();
+			try {
+				mp.exitValue();
+				msg.what = MainFragment.HALTED;
+				msg.obj = this;
+				mf.sendMessage(msg);
+			} catch (IllegalThreadStateException ite) {
+				msg.what = MainFragment.STARTED;
+				msg.obj = transV;
+				mf.sendMessage(msg);
+				Field fp = mp.getClass().getDeclaredField("pid");
+				fp.setAccessible(true);
+				mIt.process = mp;
+				mIt.pid =  getPID(fp.getInt(mp));
+				Log.e("QEMU_PID", String.valueOf(mIt.pid));
+			}
+		} catch(Exception e) {
+			e.printStackTrace();
+			Log.e("run-qemu", e.getMessage());
+		}
+	}
+
+	@Override
+	public void onClick(DialogInterface p1, int p2) {
+		mf.viewLog();
 	}
 
 	@Override
@@ -167,43 +174,28 @@ public class ItemAdapter
 		PopupMenu pm = new PopupMenu(ma, v, Gravity.END);
 		Menu m = pm.getMenu();
 		ITTHolder vh = (ITTHolder)v.getTag();
-		CharSequence name = vh.t1.getText();
-		int pos = vh.i.getTag();
+		transS = vh.t1.getText().toString();
+		transI = vh.i.getTag();
 		m.add(R.string.delete)
-		.setOnMenuItemClickListener(new ItemClick(pos, name));
+		.setOnMenuItemClickListener(this);
 		pm.show();
 		return true;
 	}
 
-	private class ItemClick
-	implements MenuItem.OnMenuItemClickListener, View.OnClickListener
-	{
-		int pos;
-		CharSequence name;
-	
-		public ItemClick(int pos, CharSequence name) {
-			this.pos = pos;
-			this.name = name;
-		}
-
-		public void onClick(View p1) {
-			mf.viewLog();
-		}
-
-		public boolean onMenuItemClick(MenuItem p1) {
-			if (new File(ma.getShPath()+"/"+name).delete()) {
-				mlist.remove(pos);
-				notifyDataSetChanged();
-			} else
-				ma.showSnack(
-					ma.getText(R.string.operation_error),
-					ma.getText(R.string.view_log),
-					this);
-			return true;
-		}
+	public boolean onMenuItemClick(MenuItem p1) {
+		MainActivity a = ma;
+		if (new File(a.getShPath()+"/"+transS).delete()) {
+			mlist.remove(transI);
+			notifyDataSetChanged();
+		} else
+			a.showSnack(
+				a.getText(R.string.operation_error),
+				a.getText(R.string.view_log),
+				this);
+		return true;
 	}
 
-	int getPID(int ppid) throws IOException, InterruptedException {
+	private int getPID(int ppid) throws IOException, InterruptedException {
 		String cmd = String.format("ps -A -o PID -P %d", ppid);
 		Process p = is_su?VMR.execsu(cmd):VMR.exec(cmd);
 		p.waitFor();

@@ -8,7 +8,8 @@ import cn.qemu.launcher.activity.*;
 import android.view.*;
 import android.support.annotation.*;
 
-public class DiskPreference extends Preference{
+public class DiskPreference extends Preference
+implements View.OnClickListener {
 
 	String mPath;
 	Context mCont;
@@ -64,12 +65,11 @@ public class DiskPreference extends Preference{
 		super.onBindViewHolder(holder);
 		dtb=holder.findViewById(R.id.disk_delete);
 		dtb.setVisibility(mPath==null||mPath.isEmpty()?View.GONE:View.VISIBLE);
-		dtb.setOnClickListener(new View.OnClickListener(){
-			@Override
-			public void onClick(View v){
-				setPath(null);
-			}
-		});
+		dtb.setOnClickListener(this);
+	}
+
+	public void onClick(View v){
+		setPath(null);
 	}
 
     @Override

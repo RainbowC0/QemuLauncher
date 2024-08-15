@@ -26,7 +26,9 @@ import android.widget.*;
 import cn.qemu.launcher.application.*;
 import org.zhoutz.utils.*;
 
-public class FileActivity extends AppCompatActivity implements AdapterView.OnItemClickListener {
+public class FileActivity extends AppCompatActivity
+	implements AdapterView.OnItemClickListener, Comparator<File>, MenuItem.OnMenuItemClickListener,
+	View.OnClickListener, View.OnLongClickListener, DialogInterface.OnClickListener {
 	private ListView ls;
 	private ACode i = new ACode(this);
 	private ListItemAdapter sp;
@@ -38,6 +40,7 @@ public class FileActivity extends AppCompatActivity implements AdapterView.OnIte
 	public final static String PATH = "_path";
 	public final static int FILE = 0, DIR = 1, FAD = 2;
 	private long last = System.currentTimeMillis()-2000;
+	private TextView transTx;
 
 	@Override protected void onCreate(Bundle savedInstanceState) {
 		if (MainApplication.IS_DARK)
@@ -46,7 +49,7 @@ public class FileActivity extends AppCompatActivity implements AdapterView.OnIte
 		if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.LOLLIPOP) {
 			TypedValue ty = new TypedValue();
 			getTheme().resolveAttribute(R.attr.colorPrimaryDark, ty, true);
-			org.zhoutz.utils.ActivityUtil.setStatusBarColor(this, ty.data);
+			ActivityUtil.setStatusBarColor(this, ty.data);
 		}
 		setContentView(R.layout.file);
 
@@ -70,30 +73,19 @@ public class FileActivity extends AppCompatActivity implements AdapterView.OnIte
 		pat.setTextColor(((TextView)par.getChildAt(0)).getTextColors());
 		pat.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
-				final View c = View.inflate(FileActivity.this, R.layout.conf_text, null);
-				((EditText)c.findViewById(android.R.id.edit)).setText(getSupportActionBar().getSubtitle());
-				new AlertDialog.Builder(FileActivity.this)
-				.setTitle(R.string.jump_to_path)
-				.setView(c)
-				.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface di, int p) {
-						getSupportActionBar().setSubtitle(((EditText)c.findViewById(android.R.id.edit)).getText().toString());
-						sp.setList(getFlist());
-					}
-				})
-				.setNegativeButton(android.R.string.cancel, null)
-				.create().show();
+				View c = View.inflate(FileActivity.this, R.layout.conf_text, null);
+				EditText et = c.findViewById(android.R.id.edit);
+				transTx = et;
+				et.setText(getSupportActionBar().getSubtitle());
+				Builder bd = new Builder(FileActivity.this);
+				bd.setTitle(R.string.jump_to_path);
+				bd.setView(c);
+				bd.setPositiveButton(android.R.string.ok, FileActivity.this);
+				bd.setNegativeButton(android.R.string.cancel, null);
+				bd.create().show();
 			}
 		});
-		pat.setOnLongClickListener(new View.OnLongClickListener() {
-			@Override
-			public boolean onLongClick(View v) {
-				CharSequence pac = ((TextView)v).getText();
-				i.clp(pac);
-				i.tw(getText(R.string.copied), 1, getResources().getColor(R.color.green));
-				return true;
-			}
-		});
+		pat.setOnLongClickListener(this);
 
 		fdf = bd.getInt(FDF);
 		ls = findViewById(R.id.flist);
@@ -102,20 +94,33 @@ public class FileActivity extends AppCompatActivity implements AdapterView.OnIte
 		ls.setOnItemClickListener(this);
 	}
 
+	public void onClick(DialogInterface di, int p) {
+		getSupportActionBar().setSubtitle(transTx.getText());
+		sp.setList(getFlist());
+	}
+
+	public boolean onLongClick(View v) {
+		CharSequence pac = ((TextView)v).getText();
+		i.clp(pac);
+		i.tw(getText(R.string.copied), 1, getResources().getColor(R.color.green));
+		return true;
+	}
+
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		super.onCreateOptionsMenu(menu);
-		if (fdf==DIR||fdf==FAD)
-			menu.add(R.string.select_dir)
-			.setIcon(R.drawable.ic_open_in_new_black_24dp)
-			.setShowAsActionFlags(1)
-			.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-				public boolean onMenuItemClick(MenuItem item) {
-					path=getSupportActionBar().getSubtitle().toString();
-					endThis(fdf==DIR?path:"fat:rw:"+path);
-					return true;
-				}
-			});
+		if (fdf==DIR||fdf==FAD) {
+			MenuItem mi = menu.add(R.string.select_dir);
+			mi.setIcon(R.drawable.ic_open_in_new_black_24dp);
+			mi.setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+			mi.setOnMenuItemClickListener(this);
+		}
+		return true;
+	}
+
+	public boolean onMenuItemClick(MenuItem item) {
+		path=getSupportActionBar().getSubtitle().toString();
+		endThis(fdf==DIR?path:"fat:rw:"+path);
 		return true;
 	}
 
@@ -136,25 +141,26 @@ public class FileActivity extends AppCompatActivity implements AdapterView.OnIte
 				if (path.matches(format))
 					endThis(path);
 				else {
-					new Builder(FileActivity.this)
-						.setIcon(R.drawable.ic_warning_amber_24dp)
-						.setTitle(R.string.choose_file)
-						.setMessage("这不是镜像文件，确定选择？")
-						.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+					Builder bd = new Builder(FileActivity.this);
+					bd.setIcon(R.drawable.ic_warning_amber_24dp);
+					bd.setTitle(R.string.choose_file);
+					bd.setMessage("这不是镜像文件，确定选择？");
+					bd.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
 							@Override
 							public void onClick(DialogInterface dig, int p) {
 								endThis(path);
 							}
-						}).setNegativeButton(android.R.string.cancel, null)
-						.create().show();
+						});
+					bd.setNegativeButton(android.R.string.cancel, null);
+					bd.create().show();
 				}
 			}
 		}
 	}
 
 	private void endThis(String path) {
-		Intent it = new Intent()
-		.putExtra(MainActivity.SELECTEDPATH, path);
+		Intent it = new Intent();
+		it.putExtra(MainActivity.SELECTEDPATH, path);
 		setResult(RESULT_OK, it);
 		finish();
 	}
@@ -163,10 +169,8 @@ public class FileActivity extends AppCompatActivity implements AdapterView.OnIte
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case android.R.id.home:
-				Intent it = getIntent();
-				setResult(RESULT_CANCELED, it);
-				finish();
-			break;
+				onClick(null);
+				break;
 		}
 		return super.onOptionsItemSelected(item);
 	}
@@ -203,14 +207,7 @@ public class FileActivity extends AppCompatActivity implements AdapterView.OnIte
 		if (!fpa.canRead())
 			return arrayList;
 		File[] fl = fdf==DIR?fpa.listFiles(ActivityUtil.DIRFILTER):fpa.listFiles();
-		Arrays.sort(fl, new Comparator<File>() {
-			public int compare(File a, File b) {
-				boolean ad=a.isDirectory(), bd=b.isDirectory();
-				return ad==bd?
-				a.getName().compareToIgnoreCase(b.getName())
-				:ad?-1:1;
-			}
-		});
+		Arrays.sort(fl, this);
         for (File i:fl) {
             Item it=new Item();
             it.icon=dri(i);
@@ -220,29 +217,33 @@ public class FileActivity extends AppCompatActivity implements AdapterView.OnIte
         }
         return arrayList;
     }
-	
+
+	public int compare(File a, File b) {
+		boolean ad=a.isDirectory(), bd=b.isDirectory();
+		return ad==bd?
+			a.getName().compareToIgnoreCase(b.getName())
+			:ad?-1:1;
+	}
+
+	public void onClick(View p) {
+		Intent it=getIntent();
+		setResult(RESULT_CANCELED,it);
+		finish();
+	}
+
 	@Override
 	public void onBackPressed() {
 		long ne = System.currentTimeMillis();
 		path = getSupportActionBar().getSubtitle().toString();
 		if (ne-last>2000L && "/".equals(path)) {
-			i.sw(ls, "再按一次返回", getText(android.R.string.ok), new View.OnClickListener() {
-				@Override
-				public void onClick(View p) {
-					Intent it=getIntent();
-					setResult(RESULT_CANCELED,it);
-					finish();
-				}
-			});
+			ACode.sw(ls, "再按一次返回", getText(android.R.string.ok), this);
 			last=ne;
 		} else if(!"/".equals(path)) {
 			path = new File(path).getParent();
 			getSupportActionBar().setSubtitle(path);
 			sp.setList(getFlist());
 		} else {
-			Intent it=getIntent();
-			setResult(RESULT_CANCELED,it);
-			finish();
+			onClick(null);
 			super.onBackPressed();
 		}
 	}
